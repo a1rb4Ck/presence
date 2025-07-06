@@ -1,15 +1,18 @@
 /*
 MIT License
 © 2025 Pierre Nagorny
+Based on https://github.com/fbriggs/lifecast_public/blob/main/web/lifecast_res/Vr180Mesh.js
 */
 
-import * as THREE from './three178.module.min.js';  // original three152.module.min.js
+import {
+    Object3D, ShaderMaterial, DoubleSide, PlaneGeometry, Mesh
+} from './three178.module.min.js';  // original three152.module.min.js
 import {
     VR180_FragmentShader,
     VR180_VertexShader
 } from "./LifecastVideoPlayerShaders11.js";
 
-export class SBSMesh extends THREE.Object3D {
+export class SBSMesh extends Object3D {
     constructor(texture) {
         super();
 
@@ -18,11 +21,11 @@ export class SBSMesh extends THREE.Object3D {
             uEffectRadius: { value: 0 },
         };
 
-        const material = new THREE.ShaderMaterial({
+        const material = new ShaderMaterial({
             vertexShader: VR180_VertexShader,
             fragmentShader: VR180_FragmentShader,  // fragmentShader or VR180_FragmentShader
             uniforms: this.uniforms,
-            side: THREE.DoubleSide,
+            side: DoubleSide,
             transparent: false
         });
 
@@ -39,10 +42,10 @@ export class SBSMesh extends THREE.Object3D {
 
     createSBSMesh(material, isLeftEye) {
         // Create a plane 3 meters away from the user
-        const geometry = new THREE.PlaneGeometry(5.33, 3, 1, 1);
+        const geometry = new PlaneGeometry(5.33, 3, 1, 1);
         
         // Position the plane 3 meters in front of the user
-        const mesh = new THREE.Mesh(geometry, material);
+        const mesh = new Mesh(geometry, material);
         mesh.position.z = -3;
         
         // Modify UVs for side-by-side stereo view

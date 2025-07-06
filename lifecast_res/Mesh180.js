@@ -1,15 +1,18 @@
 /*
 MIT License
 © 2025 Pierre Nagorny
+Based on https://github.com/fbriggs/lifecast_public/blob/main/web/lifecast_res/Vr180Mesh.js
 */
 
-import * as THREE from './three178.module.min.js';  // original three152.module.min.js
+import {
+    Object3D, ShaderMaterial, DoubleSide, SphereGeometry, Mesh
+} from './three178.module.min.js';  // original three152.module.min.js
 import {
     VR180_FragmentShader,
     VR180_VertexShader
 } from "./LifecastVideoPlayerShaders11.js";
 
-export class Mesh180 extends THREE.Object3D {
+export class Mesh180 extends Object3D {
     constructor(texture) {
         super();
 
@@ -50,11 +53,11 @@ export class Mesh180 extends THREE.Object3D {
         // `;
         // console.log(fragmentShader);
 
-        const material = new THREE.ShaderMaterial({
+        const material = new ShaderMaterial({
             vertexShader: VR180_VertexShader,
             fragmentShader: VR180_FragmentShader,  // fragmentShader or VR180_FragmentShader
             uniforms: this.uniforms,
-            side: THREE.DoubleSide,
+            side: DoubleSide,
             transparent: false
         });
 
@@ -71,7 +74,7 @@ export class Mesh180 extends THREE.Object3D {
 
     createMesh180(material, isLeftEye) {
         // A half-sphere from angle 180 to 360 degrees, 1000 meter radius
-        const geometry = new THREE.SphereGeometry(100, 64, 64, Math.PI, Math.PI);
+        const geometry = new SphereGeometry(100, 64, 64, Math.PI, Math.PI);
 
         // Modify UVs for stereo view
         // const uvs = geometry.attributes.uv.array;
@@ -85,6 +88,6 @@ export class Mesh180 extends THREE.Object3D {
 
         geometry.attributes.uv.needsUpdate = true;
 
-        return new THREE.Mesh(geometry, material);
+        return new Mesh(geometry, material);
     }
 }

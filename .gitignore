@@ -126,7 +126,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist
 
 # Gatsby files
 .cache/
@@ -175,3 +175,6 @@ dist
 .svelte-kit
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,node
+
+# Ignore self-signed certificate used for HTTPS local server
+*.pem

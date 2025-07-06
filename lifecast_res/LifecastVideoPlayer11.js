@@ -32,7 +32,11 @@ THE SOFTWARE.
 import {Vr180Mesh} from "./Vr180Mesh.js";
 import {SBSMesh} from "./SBSMesh.js";
 import {Mesh180} from "./Mesh180.js";
-import * as THREE from './three178.module.min.js';
+import {
+  Vector3, MeshPhongMaterial, DoubleSide, HemisphereLight, DirectionalLight,
+  TextureLoader, RGBAFormat, UnsignedByteType, LinearFilter, PerspectiveCamera,
+  Scene, Color, Group, PlaneGeometry, MeshBasicMaterial, Mesh, WebGLRenderer
+} from './three178.module.min.js';
 import {OrbitControls} from "./OrbitControls.js";
 import {HTMLMesh} from './HTMLMesh.js';
 import {HelpGetVR} from './HelpGetVR11.js';
@@ -92,8 +96,6 @@ let orbit_controls;
 let mouse_last_moved_time = 0;
 
 let get_vr_button;
-
-let looking_glass_config;
 
 // Used for IMU based control on mobile
 let got_orientation_data = false;
@@ -243,6 +245,12 @@ function setDebugText(message) {
 function handleGenericButtonPress() {
   // TODO: Decide on a way to reset view that doesn't interfere with gesture controls
   //resetVRToCenter();
+  if (vr_controller1.main_trigger || vr_controller0.button_A || vr_controller1.button_A) {
+    nextMedia(); // Next image
+  }
+  else if (vr_controller0.main_trigger || vr_controller0.button_B || vr_controller1.button_B || vr_controller0.secondary_trigger || vr_controller1.secondary_trigger) {
+    previousMedia();  // Previous image
+  }
 }
 
 function resetVRToCenter() {
@@ -268,8 +276,8 @@ function resetVRToCenter() {
   if (renderer.xr.getCamera().cameras.length == 2) {
     // The position of the left or right camera in the world coordinate frame can be
     // found by multiplying the 0 vector by transform to world from camera.
-    var p0 = new THREE.Vector3(0, 0, 0);
-    var p1 = new THREE.Vector3(0, 0, 0);
+    var p0 = new Vector3(0, 0, 0);
+    var p1 = new Vector3(0, 0, 0);
     p0.applyMatrix4(renderer.xr.getCamera().cameras[0].matrix);
     p1.applyMatrix4(renderer.xr.getCamera().cameras[1].matrix);
 
@@ -312,14 +320,14 @@ function onWindowResize() {
 function updateControlsAndButtons() {
   if (!nonvr_controls) return;
 
-    // Fade out but only if the mouse is not over a button
-    if (!nonvr_controls.mouse_is_over) {
-      --nonvr_menu_fade_counter;
-    }
-    nonvr_menu_fade_counter = Math.max(-60, nonvr_menu_fade_counter); // Allowing this to go negative means it takes a couple of frames of motion for it to become visible.
+  // Fade out but only if the mouse is not over a button
+  if (!nonvr_controls.mouse_is_over) {
+    --nonvr_menu_fade_counter;
+  }
+  nonvr_menu_fade_counter = Math.max(-60, nonvr_menu_fade_counter); // Allowing this to go negative means it takes a couple of frames of motion for it to become visible.
 
-    var opacity = is_buffering_at ? 1.0 : Math.min(0.8, nonvr_menu_fade_counter / 30.0);
-    opacity *= nonvr_controls.mouse_is_over || is_buffering_at ? 1.0 : 0.7;
+  var opacity = is_buffering_at ? 1.0 : Math.min(0.8, nonvr_menu_fade_counter / 30.0);
+  opacity *= nonvr_controls.mouse_is_over || is_buffering_at ? 1.0 : 0.7;
 
   nonvr_controls.style.opacity = opacity;
 
@@ -329,7 +337,7 @@ function updateControlsAndButtons() {
     byId("play_button").style.display   = "none";
     byId("previous_button").style.display = "none";
     byId("buffering_button").style.display = "inline";
-    vrbutton3d.visible = vr_session_active && (!looking_glass_config); // Only show if we are in VR and its not Looking Glass
+    vrbutton3d.visible = vr_session_active; // Only show if we are in VR
     return;
   } else {  // !video
     vrbutton3d.rotation.set(-0.5, 0, 0);
@@ -340,7 +348,7 @@ function updateControlsAndButtons() {
     byId("play_button").style.display   = "none";
     byId("previous_button").style.display = "none";
     byId("buffering_button").style.display = "none";
-    vrbutton3d.visible = vr_session_active && (!looking_glass_config); // Only show if we are in VR and its not Looking Glass
+    vrbutton3d.visible = vr_session_active; // Only show if we are in VR
     return;
   }
 
@@ -348,7 +356,7 @@ function updateControlsAndButtons() {
     byId("play_button").style.display   = "inline";
     byId("previous_button").style.display = "inline";
     byId("buffering_button").style.display = "none";
-    //vrbutton3d.visible = vr_session_active && (!looking_glass_config); // Only show if we are in VR and its not Looking Glass
+    //vrbutton3d.visible = vr_session_active; // Only show if we are in VR
     return;
   }
 
@@ -528,6 +536,8 @@ function updateGamepad(vr_controller, hand) {
 
   var prev_button_A = vr_controller.button_A;
   var prev_button_B = vr_controller.button_B;
+  var prev_button_main_trigger = vr_controller.main_trigger;
+  var prev_button_secondary_trigger = vr_controller.secondary_trigger;
 
   // Quest 3 Controller Buttons
   // Left Hand
@@ -550,8 +560,10 @@ function updateGamepad(vr_controller, hand) {
   // B Button
   // vr_controller.gamepad.buttons[5].value > 0;
 
-  vr_controller.button_A = vr_controller.gamepad.buttons[0].value > 0;
-  vr_controller.button_B = vr_controller.gamepad.buttons[1].value > 0;
+  vr_controller.button_A = vr_controller.gamepad.buttons[4].value > 0;
+  vr_controller.button_B = vr_controller.gamepad.buttons[5].value > 0;
+  vr_controller.main_trigger = vr_controller.gamepad.buttons[0].value > 0;
+  vr_controller.secondary_trigger = vr_controller.gamepad.buttons[1].value > 0;
 
   vr_controller.lockout_timer = Math.max(0, vr_controller.lockout_timer - 1);
   if (vr_controller.lockout_timer == 0) {
@@ -560,8 +572,18 @@ function updateGamepad(vr_controller, hand) {
       vr_controller.lockout_timer = 10;
       handleGenericButtonPress();
     }
+    // Check for main trigger release.
+    else if (!vr_controller.main_trigger && prev_button_main_trigger) {
+      vr_controller.lockout_timer = 10;
+      handleGenericButtonPress();
+    }
     // Check for B button release.
-    if (!vr_controller.button_B && prev_button_B) {
+    else if (!vr_controller.button_B && prev_button_B) {
+      vr_controller.lockout_timer = 10;
+      handleGenericButtonPress();
+    }
+    // Check for secondary trigger release.
+    else if (!vr_controller.secondary_trigger && prev_button_secondary_trigger) {
       vr_controller.lockout_timer = 10;
       handleGenericButtonPress();
     }
@@ -600,7 +622,7 @@ function getRotationMatrix( alpha, beta, gamma ) {
     m21,    m22,    m23,
     m31,    m32,    m33
   ];
-};
+}
 
 function applyHandMaterialRecursive(object, material) {
   object.traverse((child) => {
@@ -625,13 +647,13 @@ function setupHandAndControllerModels() {
   initVrController(vr_controller0);
   initVrController(vr_controller1);
 
-  const hand_material = new THREE.MeshPhongMaterial({
+  const hand_material = new MeshPhongMaterial({
     color: 0x8cc6ff,
     transparent: true,
     opacity: 0.33,
     depthTest: true,
     depthWrite: false,
-    side: THREE.DoubleSide
+    side: DoubleSide
   });
   // Wait until hand models load, then overwrite their material
   hand_model0 = handModelFactory.createHandModel(hand0, "mesh", function() {
@@ -643,8 +665,8 @@ function setupHandAndControllerModels() {
 
   controller_grip0.add(controllerModelFactory.createControllerModel(controller_grip0));
   controller_grip1.add(controllerModelFactory.createControllerModel(controller_grip1));
-  hand1.add(hand_model0);
-  hand0.add(hand_model1);
+  hand0.add(hand_model0);
+  hand1.add(hand_model1);
   interface_group.add(vr_controller0); // TODO: is this needed?
   interface_group.add(vr_controller1);
   interface_group.add(controller_grip0);
@@ -653,10 +675,9 @@ function setupHandAndControllerModels() {
   interface_group.add(hand1);
 
   // We need to add some light for the hand material to be anything other than black
-  scene.add(new THREE.HemisphereLight( 0xbcbcbc, 0xa5a5a5, 3));
-  scene.add(new THREE.DirectionalLight( 0xffffff, 3));
+  scene.add(new HemisphereLight( 0xbcbcbc, 0xa5a5a5, 3));
+  scene.add(new DirectionalLight( 0xffffff, 3));
 }
-
 
 function loadTexture(_media_urls, _loop) {
   console.log("Loading texture from media urls: " + _media_urls);
@@ -672,7 +693,7 @@ function loadTexture(_media_urls, _loop) {
   var ext = filenameExtension(_media_urls[0]);
   if (ext == "png" || ext == "jpg") {
     title_text_div.textContent = _media_urls[0].split('/').pop().split('.')[0];
-    texture = new THREE.TextureLoader().load(
+    texture = new TextureLoader().load(
       _media_urls[0],
       function(texture) {// onLoad callback
         is_buffering_at = false;
@@ -690,10 +711,10 @@ function loadTexture(_media_urls, _loop) {
       }
     );
     // Some of this isn't necessary, but makes the texture consistent between Photo/Video.
-    texture.format = THREE.RGBAFormat;
-    texture.type = THREE.UnsignedByteType;
-    texture.minFilter = THREE.LinearFilter; // This matters! Fixes a rendering glitch.
-    texture.magFilter = THREE.LinearFilter;
+    texture.format = RGBAFormat;
+    texture.type = UnsignedByteType;
+    texture.minFilter = LinearFilter; // This matters! Fixes a rendering glitch.
+    texture.magFilter = LinearFilter;
     texture.generateMipmaps = false;
   } else {
     console.error("Unsupported format: " + format + " for media urls: " + _media_urls);
@@ -704,10 +725,10 @@ function loadTexture(_media_urls, _loop) {
   }
   if (media_mesh && (format == "vr180" || format == "sbs")) {
     media_mesh.uniforms.uTexture.value = texture;
-    media_mesh.uniforms.uTexture.value.format = THREE.RGBAFormat;
-    media_mesh.uniforms.uTexture.value.type = THREE.UnsignedByteType;
-    media_mesh.uniforms.uTexture.value.minFilter = THREE.LinearFilter;
-    media_mesh.uniforms.uTexture.value.magFilter = THREE.LinearFilter;
+    media_mesh.uniforms.uTexture.value.format = RGBAFormat;
+    media_mesh.uniforms.uTexture.value.type = UnsignedByteType;
+    media_mesh.uniforms.uTexture.value.minFilter = LinearFilter;
+    media_mesh.uniforms.uTexture.value.magFilter = LinearFilter;
     media_mesh.uniforms.uTexture.value.generateMipmaps = false;
   }
   // TODO: 180
@@ -741,8 +762,8 @@ export function init({
   force_hand_tracking = _force_hand_tracking;
   format = _format;
 
-  let enter_xr_button_title = "ENTER VR";
-  let exit_xr_button_title = "EXIT VR";
+  let enter_xr_button_title = "CLICK TO ENTER VR";
+  let exit_xr_button_title = "CLICK TO EXIT VR";
 
   if (_embed_in_div == "") {
     setBodyStyle();
@@ -792,23 +813,21 @@ export function init({
     // For tall aspect ratios, ensure a minimum FOV
     _vfov = _min_fov / aspect_ratio;
   }
-  let z_far = (format == "ldi3") ? 110 : 200;
-  camera = new THREE.PerspectiveCamera(_vfov, aspect_ratio, 0.1, z_far);
+  let z_far = 200;
+  camera = new PerspectiveCamera(_vfov, aspect_ratio, 0.1, z_far);
   if (format == "vr180") {
     camera.layers.enable( 1 );
   }
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+  scene = new Scene();
+  scene.background = new Color(0x000000);
 
-  world_group = new THREE.Group();
-  interface_group = new THREE.Group();
+  world_group = new Group();
+  interface_group = new Group();
   scene.add(world_group);
   scene.add(interface_group);
 
-  if (format == "ldi3") {
-    media_mesh = new Ldi3Mesh(_decode_12bit, texture, _ftheta_scale)
-  } else if (format == "vr180") {
+  if (format == "vr180") {
     media_mesh = new Vr180Mesh(texture);
   } else if (format == "sbs") {
     media_mesh = new SBSMesh(texture);
@@ -820,13 +839,13 @@ export function init({
   world_group.add(media_mesh)
 
   // Make the point sprite for VR buttons.
-  const vrbutton_geometry = new THREE.PlaneGeometry(0.1, 0.1);
-  vrbutton_texture_play = new THREE.TextureLoader().load(Icons.play_button);
-  vrbutton_texture_buffering = new THREE.TextureLoader().load(Icons.spinner);
-  vrbutton_material = new THREE.MeshBasicMaterial({map: vrbutton_texture_buffering, transparent: true});
-  vrbutton3d = new THREE.Mesh(vrbutton_geometry, vrbutton_material);
+  const vrbutton_geometry = new PlaneGeometry(0.1, 0.1);
+  vrbutton_texture_play = new TextureLoader().load(Icons.play_button);
+  vrbutton_texture_buffering = new TextureLoader().load(Icons.spinner);
+  vrbutton_material = new MeshBasicMaterial({map: vrbutton_texture_buffering, transparent: true});
+  vrbutton3d = new Mesh(vrbutton_geometry, vrbutton_material);
   vrbutton3d.visible = false;
-  vrbutton3d.position.set(0, -0.2, -0.2);
+  vrbutton3d.position.set(0, -0.5, -0.5);
   vrbutton3d.renderOrder = 100;
   media_mesh.add(vrbutton3d);
   if (enable_intro_animation) {
@@ -906,12 +925,12 @@ export function init({
 
   artanim_text_mesh = new HTMLMesh(artanim_text_div);
   artanim_text_mesh.position.x = 1.0;
-  artanim_text_mesh.position.y = -1.1;  // -0.5
+  artanim_text_mesh.position.y = -1.15;  // -0.5
   artanim_text_mesh.position.z = -2;  // -1
-  artanim_text_mesh.scale.setScalar(1);  // 0.5
+  artanim_text_mesh.scale.setScalar(1.5);  // 0.5
   interface_group.add(artanim_text_mesh);
 
-  renderer = new THREE.WebGLRenderer({
+  renderer = new WebGLRenderer({
     antialias: false,  // default: true
     powerPreference: "default",  // default: "high-performance"
     preserveDrawingBuffer: false,  // default: true
@@ -927,11 +946,7 @@ export function init({
     renderer.setClearColor(0xffffff, 0.0);
     scene.background = null;
   }
-  if (_format == "ldi3") {
-    // TODO: these don't seem to work on Vision Pro, but we want to reduce the framebuffer
-    renderer.xr.setFramebufferScaleFactor(0.95);
-    renderer.xr.setFoveation(0.9);
-  } else if (_format == "vr180" || _format == "sbs" || _format == "180") {
+  if (_format == "vr180" || _format == "sbs" || _format == "180") {
     // Render VR180/SBS more clearly
     renderer.xr.setFramebufferScaleFactor(1.25);
     renderer.xr.setFoveation(0.0);
@@ -940,7 +955,7 @@ export function init({
   }
   renderer.xr.setReferenceSpaceType('local');
 
-  //renderer.outputColorSpace = THREE.sRGBEncoding; // TODO: I dont know if this is correct or even does anything. TODO: check Vision Pro
+  //renderer.outputColorSpace = sRGBEncoding; // TODO: I dont know if this is correct or even does anything. TODO: check Vision Pro
   container.appendChild(renderer.domElement);
   window.addEventListener('resize', onWindowResize);
 

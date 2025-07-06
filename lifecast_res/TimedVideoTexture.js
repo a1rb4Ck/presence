@@ -23,16 +23,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-import * as THREE from './three178.module.min.js';  // original three152.module.min.js
+import {Texture, RGBAFormat, LinearFilter} from './three178.module.min.js';  // original three152.module.min.js
 
-class TimedVideoTexture extends THREE.Texture {
+class TimedVideoTexture extends Texture {
   // Note: I moved the arguments around to put format and type up front.
   constructor( video, format, type, frame_callback, framerate, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy ) {
     super( video, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy );
     this.video = video;
-    this.format = format !== undefined ? format : THREE.RGBAFormat;
-    this.minFilter = minFilter !== undefined ? minFilter : THREE.LinearFilter;
-    this.magFilter = magFilter !== undefined ? magFilter : THREE.LinearFilter;
+    this.format = format !== undefined ? format : RGBAFormat;
+    this.minFilter = minFilter !== undefined ? minFilter : LinearFilter;
+    this.magFilter = magFilter !== undefined ? magFilter : LinearFilter;
     this.generateMipmaps = false;
     if (framerate == undefined) framerate = 30;
 

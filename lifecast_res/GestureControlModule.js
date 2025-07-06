@@ -4,20 +4,20 @@ MIT License
 https://github.com/fbriggs/lifecast_public/blob/main/web/lifecast_res/GestureControlModule.js
 */
 
-import * as THREE from './three178.module.min.js';
+import {Vector3, Matrix4} from './three178.module.min.js';
 
 class GestureControlModule {
   constructor() {
-    this.leftHandPosition = new THREE.Vector3();
-    this.rightHandPosition = new THREE.Vector3();
-    this.prevLeftHandPosition = new THREE.Vector3();
-    this.prevRightHandPosition = new THREE.Vector3();
+    this.leftHandPosition = new Vector3();
+    this.rightHandPosition = new Vector3();
+    this.prevLeftHandPosition = new Vector3();
+    this.prevRightHandPosition = new Vector3();
     this.isLeftPinching = false;
     this.isRightPinching = false;
 
     this.currentScale = 1.0;
     this.currentRotY = 0;
-    this.currentTranslation = new THREE.Vector3();
+    this.currentTranslation = new Vector3();
   }
 
   reset() {
@@ -75,16 +75,16 @@ class GestureControlModule {
   }
 
   getCurrentTransformation() {
-    let transformationMatrix = new THREE.Matrix4();
+    let transformationMatrix = new Matrix4();
 
     // Create a scaling matrix
-    let scaleMatrix = new THREE.Matrix4().makeScale(this.currentScale, this.currentScale, this.currentScale);
+    let scaleMatrix = new Matrix4().makeScale(this.currentScale, this.currentScale, this.currentScale);
 
     // Create a rotation matrix
-    let rotationMatrix = new THREE.Matrix4().makeRotationY(this.currentRotY);
+    let rotationMatrix = new Matrix4().makeRotationY(this.currentRotY);
 
     // Create a translation matrix
-    let translationMatrix = new THREE.Matrix4().makeTranslation(
+    let translationMatrix = new Matrix4().makeTranslation(
       this.currentTranslation.x,
       this.currentTranslation.y,
       this.currentTranslation.z
@@ -128,7 +128,7 @@ class GestureControlModule {
       let rotationDelta = this.normalizeAngle(this.getHandAngle(this.leftHandPosition, this.rightHandPosition) - this.getHandAngle(this.prevLeftHandPosition, this.prevRightHandPosition));
       this.currentRotY += rotationDelta;
 
-      let rotation_motion = new THREE.Vector3(-grasp_point.z, 0, grasp_point.x);
+      let rotation_motion = new Vector3(-grasp_point.z, 0, grasp_point.x);
       rotation_motion.multiplyScalar(Math.max(Math.min(rotationDelta, 0.1), -0.1));
       this.currentTranslation.add(rotation_motion);
     }
