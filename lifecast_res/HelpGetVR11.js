@@ -126,12 +126,12 @@ class HelpGetVR {
 
       if (window.innerWidth <= 768) {
         banner.style.top = '50%';
-        banner.style.left = '50%';
+        banner.style.left = 'calc(50% - 120px)';
         banner.style.bottom = '0';
         banner.style.height = '40px';
         banner.style.width = '240px';
       } else {
-        banner.style.left = '50%';
+        banner.style.left = 'calc(50% - 120px)';
         banner.style.bottom = '0';
         banner.style.height = '40px';
         banner.style.width = '240px';
@@ -143,7 +143,7 @@ class HelpGetVR {
       banner.style.padding = '12px 6px';
       banner.style.border = '1px solid #ffffff40';
       banner.style.font = 'normal 32px sans-serif';
-      banner.style.left = '50%';
+      banner.style.left = 'calc(50% - 175px)';
       banner.style.width = '350px';
 
       navigator.xr.isSessionSupported( 'immersive-vr' ).then( function ( supported ) {

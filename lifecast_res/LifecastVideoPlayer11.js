@@ -176,7 +176,7 @@ function makeNonVrControls() {
   nonvr_controls.id = "nonvr_controls";
   nonvr_controls.style["margin"]            = "auto";
   nonvr_controls.style["position"]          = "absolute";
-  nonvr_controls.style["top"]               = "85%";  //"50%";
+  nonvr_controls.style["top"]               = "80%";  //"50%";
   nonvr_controls.style["left"]              = "50%";
   nonvr_controls.style["transform"]         = "translate(-50%, -50%)";
 
@@ -246,9 +246,40 @@ function handleGenericButtonPress() {
   // TODO: Decide on a way to reset view that doesn't interfere with gesture controls
   //resetVRToCenter();
   if (vr_controller1.main_trigger || vr_controller0.button_A || vr_controller1.button_A) {
+    if (vr_controller1.main_trigger || vr_controller1.button_A) {
+      // https://stackoverflow.com/questions/62476426/webxr-controllers-for-button-pressing-in-three-js
+      if (  //provide haptic feedback if available in browser
+        vr_controller1.gamepad.hapticActuators &&
+        vr_controller1.gamepad.hapticActuators[0]
+      ) {
+        vr_controller1.gamepad.hapticActuators[0].pulse(0.75, 100);
+      }
+    } else if (vr_controller0.button_A) {
+      if (  //provide haptic feedback if available in browser
+        vr_controller0.gamepad.hapticActuators &&
+        vr_controller0.gamepad.hapticActuators[0]
+      ) {
+        vr_controller0.gamepad.hapticActuators[0].pulse(0.75, 100);
+      }
+    }
     nextMedia(); // Next image
   }
   else if (vr_controller0.main_trigger || vr_controller0.button_B || vr_controller1.button_B || vr_controller0.secondary_trigger || vr_controller1.secondary_trigger) {
+    if (vr_controller0.main_trigger || vr_controller0.button_B || vr_controller0.secondary_trigger) {
+      if (  //provide haptic feedback if available in browser
+        vr_controller0.gamepad.hapticActuators &&
+        vr_controller0.gamepad.hapticActuators[0]
+      ) {
+        vr_controller0.gamepad.hapticActuators[0].pulse(0.75, 100);
+      }
+    } else if (vr_controller1.button_B || vr_controller1.secondary_trigger) {
+      if (  //provide haptic feedback if available in browser
+        vr_controller1.gamepad.hapticActuators &&
+        vr_controller1.gamepad.hapticActuators[0]
+      ) {
+        vr_controller1.gamepad.hapticActuators[0].pulse(0.75, 100);
+      }
+    }
     previousMedia();  // Previous image
   }
 }
@@ -332,6 +363,7 @@ function updateControlsAndButtons() {
   nonvr_controls.style.opacity = opacity;
 
   if (is_buffering_at && performance.now() - is_buffering_at > BUFFERING_TIMEOUT) {
+    vrbutton3d.position.set(0, -0.2, -0.2);
     vrbutton3d.rotateZ(-0.1);
     vrbutton_material.map = vrbutton_texture_buffering;
     byId("play_button").style.display   = "none";
@@ -340,6 +372,7 @@ function updateControlsAndButtons() {
     vrbutton3d.visible = vr_session_active; // Only show if we are in VR
     return;
   } else {  // !video
+    vrbutton3d.position.set(0, -0.5, -0.5);
     vrbutton3d.rotation.set(-0.5, 0, 0);
     vrbutton_material.map = vrbutton_texture_play;
   }
@@ -518,6 +551,12 @@ function initVrController(vr_controller) {
   vr_controller.addEventListener('connected', function(e) {
     vr_controller.gamepad = e.data.gamepad;
   });
+  // // Events
+  // controller_grip0, controller_grip1, hand0, hand1
+  // controllerGrip.addEventListener('connected', 
+  //   (event) => this.onControllerConnect(event, controllerGrip, controllerHand));
+  // controllerGrip.addEventListener('disconnected', 
+  //   (event) => this.onControllerDisconnect(event, controllerGrip, controllerHand));
 
   vr_controller.button_A = false;
   vr_controller.button_B = false;
@@ -569,22 +608,22 @@ function updateGamepad(vr_controller, hand) {
   if (vr_controller.lockout_timer == 0) {
     // Check for A or B button release.
     if (!vr_controller.button_A && prev_button_A) {
-      vr_controller.lockout_timer = 10;
+      vr_controller.lockout_timer = 5;  // 10
       handleGenericButtonPress();
     }
     // Check for main trigger release.
     else if (!vr_controller.main_trigger && prev_button_main_trigger) {
-      vr_controller.lockout_timer = 10;
+      vr_controller.lockout_timer = 5;  // 10
       handleGenericButtonPress();
     }
     // Check for B button release.
     else if (!vr_controller.button_B && prev_button_B) {
-      vr_controller.lockout_timer = 10;
+      vr_controller.lockout_timer = 5;  // 10
       handleGenericButtonPress();
     }
     // Check for secondary trigger release.
     else if (!vr_controller.secondary_trigger && prev_button_secondary_trigger) {
-      vr_controller.lockout_timer = 10;
+      vr_controller.lockout_timer = 5;  // 10
       handleGenericButtonPress();
     }
   }
@@ -667,7 +706,7 @@ function setupHandAndControllerModels() {
   controller_grip1.add(controllerModelFactory.createControllerModel(controller_grip1));
   hand0.add(hand_model0);
   hand1.add(hand_model1);
-  interface_group.add(vr_controller0); // TODO: is this needed?
+  interface_group.add(vr_controller0);
   interface_group.add(vr_controller1);
   interface_group.add(controller_grip0);
   interface_group.add(controller_grip1);
@@ -680,7 +719,7 @@ function setupHandAndControllerModels() {
 }
 
 function loadTexture(_media_urls, _loop) {
-  console.log("Loading texture from media urls: " + _media_urls);
+  // console.log("Loading texture from media urls: " + _media_urls);
   is_buffering_at = performance.now();
   if (texture) {
     texture.dispose(); // Not clear if this helps or hurst as far as WebGL: context lost errors
@@ -703,11 +742,11 @@ function loadTexture(_media_urls, _loop) {
       },
       function(xhr) { // Progress callback
         const percentage = (xhr.loaded / xhr.total) * 100;
-        console.log("texture loading progress", percentage);
+        // console.log("texture loading progress", percentage);
       },
       function(error) { // error callback
         error_message_div.innerHTML = "Error loading texture: "  + _media_urls[0];
-        console.warn("Error loading texture: " + _media_urls[0] + " " + error);
+        console.warn("Error loading: " + _media_urls[0] + " " + error);
       }
     );
     // Some of this isn't necessary, but makes the texture consistent between Photo/Video.
@@ -723,7 +762,7 @@ function loadTexture(_media_urls, _loop) {
   if (media_mesh) {
     media_mesh.uniforms.uTexture = texture;
   }
-  if (media_mesh && (format == "vr180" || format == "sbs")) {
+  if (media_mesh && (format == "vr180" || format == "sbs" || format == "180")) {
     media_mesh.uniforms.uTexture.value = texture;
     media_mesh.uniforms.uTexture.value.format = RGBAFormat;
     media_mesh.uniforms.uTexture.value.type = UnsignedByteType;
@@ -815,8 +854,10 @@ export function init({
   }
   let z_far = 200;
   camera = new PerspectiveCamera(_vfov, aspect_ratio, 0.1, z_far);
-  if (format == "vr180") {
-    camera.layers.enable( 1 );
+  if (format == "vr180" || format == "sbs") {
+    camera.layers.enable( 1 );  // 1 is the layer for VR180/SBS
+  } else if (format == "180") {
+    camera.layers.enable( 0 );
   }
 
   scene = new Scene();
@@ -829,11 +870,14 @@ export function init({
 
   if (format == "vr180") {
     media_mesh = new Vr180Mesh(texture);
-  } else if (format == "sbs") {
-    media_mesh = new SBSMesh(texture);
-  } else if (format == "180") {
+  }
+  else if (format == "180") {
     media_mesh = new Mesh180(texture);
-  } else {
+  }
+  else if (format == "sbs") {
+    media_mesh = new SBSMesh(texture);
+  }
+  else {
     console.error("Unsupported format: " + format);
   }
   world_group.add(media_mesh)
@@ -875,7 +919,7 @@ export function init({
     debug_text_mesh = new HTMLMesh(debug_text_div);
     debug_text_mesh.position.x = -0.5;
     debug_text_mesh.position.y = 0.25;
-    debug_text_mesh.position.z = -1.0;
+    debug_text_mesh.position.z = -1.5;
     debug_text_mesh.rotation.y = Math.PI / 9;
     debug_text_mesh.scale.setScalar(1.0);
     interface_group.add(debug_text_mesh);
@@ -904,9 +948,9 @@ export function init({
   title_text_mesh = new HTMLMesh(title_text_div);
   // title_text_mesh.position.x = 0.5;
   title_text_mesh.position.y = -1;
-  title_text_mesh.position.z = -2;
+  title_text_mesh.position.z = -1.5;
   // title_text_mesh.rotation.x = -Math.PI/3;
-  title_text_mesh.scale.setScalar(2);
+  title_text_mesh.scale.setScalar(1.5);
   interface_group.add(title_text_mesh);
 
   // Artanim text
@@ -925,9 +969,9 @@ export function init({
 
   artanim_text_mesh = new HTMLMesh(artanim_text_div);
   artanim_text_mesh.position.x = 1.0;
-  artanim_text_mesh.position.y = -1.15;  // -0.5
-  artanim_text_mesh.position.z = -2;  // -1
-  artanim_text_mesh.scale.setScalar(1.5);  // 0.5
+  artanim_text_mesh.position.y = -1.2;  // -0.5
+  artanim_text_mesh.position.z = -1.5;  // -1
+  artanim_text_mesh.scale.setScalar(1);  // 0.5
   interface_group.add(artanim_text_mesh);
 
   renderer = new WebGLRenderer({
@@ -951,7 +995,7 @@ export function init({
     renderer.xr.setFramebufferScaleFactor(1.25);
     renderer.xr.setFoveation(0.0);
   } else {
-    console.log("ERROR: unknown _format:", _format);
+    console.log("ERROR: unknown format:", _format);
   }
   renderer.xr.setReferenceSpaceType('local');
 

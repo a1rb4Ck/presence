@@ -1,5 +1,11 @@
 # Dev log
 
+## 2025-07-07
+
+Add haptics.
+Improve title position in VR.
+TODO: https://github.com/34j/vr180-convert
+
 ## 2025-07-06
 
 Publish to GitHub Pages.

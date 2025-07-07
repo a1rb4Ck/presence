@@ -73,7 +73,7 @@ export class Vr180Mesh extends Object3D {
     }
 
     createVr180Mesh(material, isLeftEye) {
-        // A half-sphere from angle 180 to 360 degrees, 1000 meter radius
+        // A half-sphere from angle 180 to 360 degrees, 100 meter radius
         const geometry = new SphereGeometry(100, 64, 64, Math.PI, Math.PI);
 
         // Modify UVs for stereo view

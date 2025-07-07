@@ -61,33 +61,25 @@ export class Mesh180 extends Object3D {
             transparent: false
         });
 
-        // Create left eye mesh
-        const leftMesh = this.createMesh180(material, true);
-        leftMesh.layers.set(1);  // Use layer 1 for left eye
-        this.add(leftMesh);
-
-        // Create right eye mesh
-        const rightMesh = this.createMesh180(material, false);
-        rightMesh.layers.set(2);  // Use layer 2 for right eye
-        this.add(rightMesh);
+        // Create single monocular mesh (visible to both eyes)
+        const monoMesh = this.createMesh180(material);
+        monoMesh.layers.set(0);  // Use default layer 0 (visible to both eyes)
+        this.add(monoMesh);
     }
 
-    createMesh180(material, isLeftEye) {
-        // A half-sphere from angle 180 to 360 degrees, 1000 meter radius
+    createMesh180(material) {
+        // A half-sphere from angle 180 to 360 degrees, 100 meter radius
         const geometry = new SphereGeometry(100, 64, 64, Math.PI, Math.PI);
 
-        // Modify UVs for stereo view
-        // const uvs = geometry.attributes.uv.array;
-        // for (let i = 0; i < uvs.length; i += 2) {
-        //     if (isLeftEye) {
-        //         uvs[i] = (1.0 - uvs[i]) * 0.5;  // Left eye
-        //     } else {
-        //         uvs[i] = 1.0 - (uvs[i] * 0.5);  // Right eye
-        //     }
-        // }
-
+        // For monocular projection, we use standard UV mapping for the hemisphere
+        // No special UV modifications needed - the shader handles texture mapping directly
         geometry.attributes.uv.needsUpdate = true;
 
-        return new Mesh(geometry, material);
+        const mesh = new Mesh(geometry, material);
+        // Incline the sphere mesh by 30 degrees (convert to radians)
+        // Panrama: 30º
+        // Omnimax: 27º
+        mesh.rotation.x = Math.PI / 6; // 30 degrees = π/6 radians
+        return mesh;
     }
 }
