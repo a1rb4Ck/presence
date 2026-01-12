@@ -1,5 +1,18 @@
 # Dev log
 
+## 2026-01-12
+
+Fix mobile touch controls:
+- Add touch-drag for camera orientation on all mobile browsers (not just iOS)
+- Add pinch-to-zoom on mobile browsers
+- Fix navigation buttons visibility on mobile (touch triggers button display)
+- Add pointer events to navigation buttons for better touch response
+
+Fix VR button:
+- Show "VR not supported" when WebXR is unavailable on mobile Chrome
+- Downsize VR button for cleaner appearance (smaller font, padding, width)
+- Shorter button text: "Enter VR" / "Exit VR"
+
 ## 2025-07-07
 
 Add haptics.

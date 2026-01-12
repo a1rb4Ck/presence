@@ -107,6 +107,11 @@ let init_orientation_c = 0;
 let mobile_drag_u = 0.0;
 let mobile_drag_v = 0.0;
 
+// Pinch-to-zoom state for mobile
+let pinch_start_distance = 0;
+let pinch_start_fov = 80;
+let is_pinching = false;
+
 // Used for programmatic camera animation
 let anim_x = 0.15;
 let anim_y = 0.10;
@@ -176,6 +181,7 @@ var is_oculus = (ua.indexOf("Oculus") != -1);
 var is_chrome =  (ua.indexOf("Chrome")  != -1) || is_oculus;
 var is_safarish =  (ua.indexOf("Safari")  != -1) && (!is_chrome || (ua.indexOf("Mac")  != -1)); // This can still be true on Chrome for Mac...
 var is_ios = ua.match(/iPhone|iPad|iPod/i);
+var is_mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 
 function byId(id) { return document.getElementById( id ); };
 
@@ -237,6 +243,8 @@ function makeNonVrControls() {
   previous_button.style.width                 = sz;
   previous_button.style.height                = sz;
   previous_button.style.transform             = "rotate(180deg)";
+  previous_button.style.cursor                = "pointer";
+  previous_button.style.pointerEvents         = "auto";
 
   const play_button = document.createElement("img");
   play_button.id                            = "play_button";
@@ -245,6 +253,8 @@ function makeNonVrControls() {
   play_button.style.display                 = "none";
   play_button.style.width                   = sz;
   play_button.style.height                  = sz;
+  play_button.style.cursor                  = "pointer";
+  play_button.style.pointerEvents           = "auto";
 
   const buffering_button = document.createElement("img");
   buffering_button.id                       = "buffering_button";
@@ -745,7 +755,20 @@ function updateCameraPosition() {
       camera.position.set(-prev_mouse_u * 0.2 + cam_drag_u, prev_mouse_v * 0.2 + cam_drag_v, 0.0);
       camera.lookAt(cam_drag_u, cam_drag_v, -0.3);
     }
-  } else if (cam_mode == "orbit" && !is_ios) {
+  } else if (cam_mode == "orbit" && is_mobile && !is_ios) {
+    // Mobile (non-iOS) touch control - use mobile_drag_u/v directly
+    if (Date.now() - mouse_last_moved_time > AUTO_CAM_MOVE_TIME) {
+      // Idle animation when not touching
+      let x = anim_x * Math.sin(Date.now() / anim_x_speed * Math.PI) * 0.5;
+      camera.position.set(-x * 0.5, 0, 0);
+      camera.lookAt(0, 0, -1);
+    } else {
+      // User is actively dragging
+      camera.position.set(-mobile_drag_u * 0.5, mobile_drag_v * 0.5, 0.0);
+      camera.lookAt(0, 0, -1);
+    }
+  } else if (cam_mode == "orbit" && !is_mobile) {
+    // Desktop orbit controls
     let t = 1.0;
     if (transition_start_timer) {
       t = Math.min(1.0, (performance.now() - transition_start_timer) / TRANSITION_ANIM_DURATION);
@@ -1333,8 +1356,8 @@ export function init({
   force_hand_tracking = _force_hand_tracking;
   format = _format;
 
-  let enter_xr_button_title = "CLICK TO ENTER VR";
-  let exit_xr_button_title = "CLICK TO EXIT VR";
+  let enter_xr_button_title = "Enter VR";
+  let exit_xr_button_title = "Exit VR";
 
   if (_embed_in_div == "") {
     setBodyStyle();
@@ -1624,17 +1647,74 @@ export function init({
     camera.position.set(0, 0, 0.0);
   }
 
-  if (is_ios && !embed_mode) {
+  // Mobile touch controls for camera orientation and pinch-to-zoom
+  if (is_mobile && !embed_mode) {
     document.body.style["touch-action"] = "none";
+
+    // Track touch start for drag
+    let touch_start_x = 0;
+    let touch_start_y = 0;
+    let drag_start_u = 0;
+    let drag_start_v = 0;
+
+    document.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        // Single touch - start drag
+        touch_start_x = e.touches[0].pageX;
+        touch_start_y = e.touches[0].pageY;
+        drag_start_u = mobile_drag_u;
+        drag_start_v = mobile_drag_v;
+        is_pinching = false;
+      } else if (e.touches.length === 2) {
+        // Two-finger touch - start pinch zoom
+        is_pinching = true;
+        const dx = e.touches[0].pageX - e.touches[1].pageX;
+        const dy = e.touches[0].pageY - e.touches[1].pageY;
+        pinch_start_distance = Math.sqrt(dx * dx + dy * dy);
+        pinch_start_fov = camera.fov;
+      }
+    }, { passive: false });
+
     document.addEventListener('touchmove', function(e) {
       e.preventDefault();
-      var touch = e.touches[0];
 
-      let u = (touch.pageX / window.innerWidth - 0.5) * 2.0;
-      let v = (touch.pageY / window.innerHeight - 0.5) * 2.0;
-      mobile_drag_u = mobile_drag_u * 0.8 + u * 0.2;
-      mobile_drag_v = mobile_drag_v * 0.8 + v * 0.2;
-    }, false);
+      if (e.touches.length === 2 && is_pinching) {
+        // Two-finger pinch zoom
+        const dx = e.touches[0].pageX - e.touches[1].pageX;
+        const dy = e.touches[0].pageY - e.touches[1].pageY;
+        const current_distance = Math.sqrt(dx * dx + dy * dy);
+        const scale = pinch_start_distance / current_distance;
+
+        const MIN_FOV = 10;
+        const MAX_FOV = 120;
+        camera.fov = Math.max(MIN_FOV, Math.min(MAX_FOV, pinch_start_fov * scale));
+        camera.updateProjectionMatrix();
+      } else if (e.touches.length === 1 && !is_pinching) {
+        // Single touch drag for camera orientation
+        const touch = e.touches[0];
+        const delta_x = (touch.pageX - touch_start_x) / window.innerWidth;
+        const delta_y = (touch.pageY - touch_start_y) / window.innerHeight;
+
+        mobile_drag_u = drag_start_u + delta_x * 2.0;
+        mobile_drag_v = drag_start_v + delta_y * 2.0;
+
+        // Update mouse last moved time to disable auto-animation
+        mouse_last_moved_time = Date.now();
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function(e) {
+      if (e.touches.length < 2) {
+        is_pinching = false;
+      }
+      if (e.touches.length === 1) {
+        // Reset drag start when going from 2 to 1 finger
+        touch_start_x = e.touches[0].pageX;
+        touch_start_y = e.touches[0].pageY;
+        drag_start_u = mobile_drag_u;
+        drag_start_v = mobile_drag_v;
+      }
+    }, { passive: false });
   }
 
   // Setup hand/controller models and initialize stuff related to user input from controllers or hands
@@ -1659,6 +1739,13 @@ export function init({
   document.addEventListener('mousemove', e => {
     if (!mouse_is_down) nonvr_menu_fade_counter = Math.min(60, nonvr_menu_fade_counter + 5);
   });
+
+  // On mobile, show buttons on touch as well
+  if (is_mobile) {
+    document.addEventListener('touchstart', e => {
+      nonvr_menu_fade_counter = Math.min(60, nonvr_menu_fade_counter + 30);
+    }, { passive: true });
+  }
 
   document.addEventListener('mousedown', e => {
     mouse_is_down = true;

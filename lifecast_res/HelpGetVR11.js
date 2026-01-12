@@ -73,18 +73,19 @@ class HelpGetVR {
     function disableButton() {
       banner.style.display = '';
       banner.style.cursor = 'auto';
-			banner.style.left = 'calc(50% - 100px)';
-			banner.style.width = '200px';
-      banner.style.fontSize = '1em';
-      banner.style.bottom = '3%';
+      banner.style.left = 'calc(50% - 85px)';
+      banner.style.width = '170px';
+      banner.style.fontSize = '14px';
+      banner.style.bottom = '15%';
+      banner.style.opacity = '0.5';
       banner.onmouseenter = null;
       banner.onmouseleave = null;
       banner.onclick = null;
     }
-    
+
     function showWebXRNotFound() {
       disableButton();
-      banner.textContent = 'WebXR not supported';
+      banner.textContent = 'VR not supported';
     }
 
     function showVRNotAllowed( exception ) {
@@ -97,13 +98,14 @@ class HelpGetVR {
     banner.style.display = "none";
 
     var is_ios = navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    var is_mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-    // Setting relevant styles 
+    // Setting relevant styles
     banner.style.position = 'absolute';
     banner.style.bottom = '20px';  // added
-    banner.style.padding = '12px 6px';  // added
+    banner.style.padding = '8px 12px';  // smaller padding
     banner.style.border = '1px solid #fff';  // added
-    banner.style.borderRadius = '12px';  // '4px' added
+    banner.style.borderRadius = '8px';  // smaller radius
     banner.style.background = 'rgba(0,0,0,0.5)';  // 'rgba(0,0,0,0.1)' added
     banner.style.color = '#ffffffff';
     banner.style.font = 'normal 13px sans-serif';  // added
@@ -139,12 +141,13 @@ class HelpGetVR {
       banner.style.display = "block";
       return banner;
     } else if ('xr' in navigator) {
+      // Smaller, more elegant VR button
       banner.style.bottom = '15%';
-      banner.style.padding = '12px 6px';
+      banner.style.padding = '8px 16px';
       banner.style.border = '1px solid #ffffff40';
-      banner.style.font = 'normal 32px sans-serif';
-      banner.style.left = 'calc(50% - 175px)';
-      banner.style.width = '350px';
+      banner.style.font = 'normal 16px sans-serif';
+      banner.style.left = 'calc(50% - 75px)';
+      banner.style.width = '150px';
 
       navigator.xr.isSessionSupported( 'immersive-vr' ).then( function ( supported ) {
         if (supported) {
