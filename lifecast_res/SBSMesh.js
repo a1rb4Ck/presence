@@ -1,6 +1,6 @@
 /*
 MIT License
-© 2025 Pierre Nagorny
+© 2025-2026 Artanim, Pierre Nagorny
 Based on https://github.com/fbriggs/lifecast_public/blob/main/web/lifecast_res/Vr180Mesh.js
 */
 
@@ -18,7 +18,10 @@ export class SBSMesh extends Object3D {
 
         this.uniforms = {
             uTexture: { value: texture },
+            uTextureNext: { value: texture },  // For crossfade transitions
             uEffectRadius: { value: 0 },
+            uFadeAmount: { value: 1.0 },  // 1.0 = full visible, 0.0 = black
+            uCrossfade: { value: 0.0 },   // 0.0 = current, 1.0 = next
         };
 
         const material = new ShaderMaterial({

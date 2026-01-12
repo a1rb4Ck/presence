@@ -1,6 +1,6 @@
 /*
 MIT License
-© 2025 Pierre Nagorny
+© 2025-2026 Artanim, Pierre Nagorny
 Based on https://github.com/fbriggs/lifecast_public/blob/main/web/lifecast_res/Vr180Mesh.js
 */
 
@@ -18,7 +18,10 @@ export class Mesh180 extends Object3D {
 
         this.uniforms = {
             uTexture: { value: texture },
+            uTextureNext: { value: texture },  // For crossfade transitions
             uEffectRadius: { value: 0 },
+            uFadeAmount: { value: 1.0 },  // 1.0 = full visible, 0.0 = black
+            uCrossfade: { value: 0.0 },   // 0.0 = current, 1.0 = next
         };
 
         // const fragmentShader = `
@@ -71,8 +74,14 @@ export class Mesh180 extends Object3D {
         // A half-sphere from angle 180 to 360 degrees, 100 meter radius
         const geometry = new SphereGeometry(100, 64, 64, Math.PI, Math.PI);
 
+
         // For monocular projection, we use standard UV mapping for the hemisphere
         // No special UV modifications needed - the shader handles texture mapping directly
+        // Flip the U coordinate horizontally
+        for (let i = 0; i < geometry.attributes.uv.array.length; i += 2) {
+            // i is the U coordinate
+            geometry.attributes.uv.array[i] = 1 - geometry.attributes.uv.array[i];
+        }
         geometry.attributes.uv.needsUpdate = true;
 
         const mesh = new Mesh(geometry, material);
