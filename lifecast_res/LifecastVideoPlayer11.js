@@ -281,7 +281,7 @@ function makeNonVrControls() {
 }
 
 function debugLog(message) {
-  console.log('[Panrama]', message); // Also log to browser console
+  console.log('[Presence]', message); // Also log to browser console
   ++debug_msg_count;
   if (debug_msg_count > 20) {
     // Keep last 20 messages, trim old ones
@@ -303,7 +303,7 @@ function updateDebugDisplay() {
   const slideInfo = 'Slide: ' + slide_progress.toFixed(2);
   const vrInfo = 'VR: ' + (vr_session_active ? 'Active' : 'Inactive');
 
-  const header = '=== PANRAMA VR DEBUG ===\n' +
+  const header = '=== PRESENCE VR DEBUG ===\n' +
                  imgInfo + ' | ' + fadeInfo + '\n' +
                  slideInfo + ' | ' + vrInfo + '\n' +
                  '========================\n';
