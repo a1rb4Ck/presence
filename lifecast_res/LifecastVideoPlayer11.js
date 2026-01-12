@@ -636,7 +636,7 @@ function updateControlsAndButtons() {
   nonvr_controls.style.opacity = opacity;
 
   if (is_buffering_at && performance.now() - is_buffering_at > BUFFERING_TIMEOUT) {
-    vrbutton3d.position.set(0, -0.2, -0.2);
+    vrbutton3d.position.set(0, -0.35, -0.2);
     vrbutton3d.rotateZ(-0.1);
     vrbutton_material.map = vrbutton_texture_buffering;
     byId("play_button").style.display   = "none";
@@ -645,7 +645,7 @@ function updateControlsAndButtons() {
     vrbutton3d.visible = vr_session_active; // Only show if we are in VR
     return;
   } else {  // !video
-    vrbutton3d.position.set(0, -0.5, -0.5);
+    vrbutton3d.position.set(0, -0.65, -0.5);
     vrbutton3d.rotation.set(-0.5, 0, 0);
     vrbutton_material.map = vrbutton_texture_play;
   }
@@ -1445,7 +1445,7 @@ export function init({
   vrbutton_material = new MeshBasicMaterial({map: vrbutton_texture_buffering, transparent: true});
   vrbutton3d = new Mesh(vrbutton_geometry, vrbutton_material);
   vrbutton3d.visible = false; // Always hidden - not used in VR anymore
-  vrbutton3d.position.set(0, -0.3, -0.5);
+  vrbutton3d.position.set(0, -0.45, -0.5);
   vrbutton3d.renderOrder = 100;
   media_mesh.add(vrbutton3d);
 
